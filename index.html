@@ -225,7 +225,7 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
 .login-box input:focus{border-color:var(--accent2)}
 .login-box button{width:100%;margin-top:8px}
 #login-error{color:var(--danger);font-size:12px;margin-top:10px;min-height:16px}
-#loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:950;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+#loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;padding:2rem}
 #loading-overlay.hide{display:none}
 #app-root{display:none}
 #app-root.show{display:block}
@@ -759,11 +759,18 @@ async function bootApp(){
   runSplash();
 }
 (async()=>{
-  const appR=$('app-root'),loading=$('loading-overlay');
+  const appR=$('app-root'),loading=$('loading-overlay'),splash=$('splash');
+  const watchdog=setTimeout(()=>{
+    loading.classList.remove('hide');
+    loading.textContent='로딩이 너무 오래 걸려요. Firebase 설정(익명 로그인/보안규칙)을 확인해주세요.';
+  },10000);
   try{
     if(!fauth.currentUser)await fauth.signInAnonymously();
   }catch(e){
+    clearTimeout(watchdog);
+    loading.classList.remove('hide');
     loading.textContent='연결 실패: '+e.message;
+    if(splash)splash.classList.add('hide');
     return;
   }
   fauth.onAuthStateChanged(async user=>{
@@ -772,9 +779,12 @@ async function bootApp(){
       appR.classList.add('show');
       loading.classList.add('hide');
       await bootApp();
+      clearTimeout(watchdog);
     }catch(e){
+      clearTimeout(watchdog);
       loading.classList.remove('hide');
       loading.textContent='데이터를 불러오지 못했어요: '+e.message;
+      if(splash)splash.classList.add('hide');
     }
   });
 })();
