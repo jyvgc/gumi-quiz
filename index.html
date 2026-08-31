@@ -218,9 +218,42 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
 .modal-box h3{font-family:'Gmarket Sans',sans-serif;font-size:16px;margin-bottom:14px}
 .modal-box .settings-label{margin-top:12px}
 .modal-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 10px;border:2px solid var(--border)}
+
+/* Login */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:900;padding:2rem}
+#login-screen.show{display:flex}
+.login-box{width:100%;max-width:320px;text-align:center}
+.login-box h2{font-family:'Gmarket Sans',sans-serif;font-size:20px;margin-bottom:6px}
+.login-box p{font-size:13px;color:var(--muted);margin-bottom:28px}
+.login-box input{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:15px;background:var(--bg3);color:var(--text);margin-bottom:10px;outline:none;font-family:'Noto Sans KR',sans-serif}
+.login-box input:focus{border-color:var(--accent2)}
+.login-box button{width:100%;margin-top:8px}
+#login-error{color:var(--danger);font-size:12px;margin-top:10px;min-height:16px}
+#loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:950;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+#loading-overlay.hide{display:none}
+#app-root{display:none}
+#app-root.show{display:block}
 </style>
 </head>
 <body>
+
+<div id="loading-overlay">불러오는 중...</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script>
+const firebaseConfig={apiKey:"AIzaSyC7PzmZXGhOIhtzVSHDOKHaOODqo0HIHm8",authDomain:"gumi-quiz-e8efb.firebaseapp.com",projectId:"gumi-quiz-e8efb",storageBucket:"gumi-quiz-e8efb.firebasestorage.app",messagingSenderId:"918331904734",appId:"1:918331904734:web:d288be925ef20bf158684f",measurementId:"G-NZPWF1F5F3"};
+firebase.initializeApp(firebaseConfig);
+const fauth=firebase.auth();
+const fdb=firebase.firestore();
+const fstorage=firebase.storage();
+fdb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+</script>
+
+<div id="app-root">
 
 <!-- Splash -->
 <div id="splash">
@@ -240,7 +273,6 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
 <header>
   <button class="hback" id="hback" onclick="navBack()">←</button>
   <div class="htitle" id="htitle">구미대 이름퀴즈</div>
-  <button class="hlock" id="hlock" onclick="toggleAdmin()" title="관리자 모드">🔒</button>
   <button class="hset" id="hset" onclick="gotoScreen('s-settings')" title="설정">⚙</button>
   <span class="hbadge">2026</span>
 </header>
@@ -263,7 +295,6 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
     <div class="stu-summary">
       <div class="stu-dot" id="home-dot" style="background:var(--border)"></div>
       <span id="home-stu-cnt">학생 정보 없음 — 관리에서 사진을 추가하세요</span>
-      <span class="admin-badge" id="admin-badge" style="display:none">관리자 모드</span>
     </div>
     <div class="group-chips" id="group-chips"></div>
   </div>
@@ -284,7 +315,7 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
       <div class="menu-accent"></div><span class="menu-icon">⚙️</span>
       <div class="menu-label">학생 관리</div><div class="menu-desc">사진 추가 / 삭제 / 설명 편집</div>
     </div>
-    <div class="menu-card" id="card-groups" onclick="gotoScreen('s-groups')" style="display:none">
+    <div class="menu-card" id="card-groups" onclick="gotoScreen('s-groups')">
       <div class="menu-accent"></div><span class="menu-icon">🗂️</span>
       <div class="menu-label">그룹 관리</div><div class="menu-desc">새 그룹 추가 / 이름변경 / 삭제</div>
     </div>
@@ -453,6 +484,8 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
 
 </div>
 
+</div><!-- /app-root -->
+
 <!-- STUDENT DETAIL MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeStudentModal()">
   <div class="modal-box">
@@ -487,17 +520,18 @@ let recog=null,isListening=false;
 const DEFAULT_TITLE='비주얼게임컨텐츠스쿨\n2026학년도 신입생';
 const DEFAULT_COPY='Copyright © kjyg2627@gmail.com · All Rights Reserved';
 let appTitle=DEFAULT_TITLE,appCopy=DEFAULT_COPY;
-let groups=[],currentGroupId=null,isAdmin=false,editingStudentId=null;
-const ADMIN_PIN='2626';
+let groups=[],currentGroupId=null,isAdmin=true,editingStudentId=null;
 
 /* ── DB ── */
-function openDB(){return new Promise((res,rej)=>{const req=indexedDB.open('StudentQuizDB',4);req.onupgradeneeded=e=>{const d=e.target.result;['students','records','settings','groups'].forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,s==='settings'?{keyPath:'key'}:{keyPath:'id',autoIncrement:true})})};req.onsuccess=e=>{db=e.target.result;res(db)};req.onerror=()=>rej(req.error)})}
-const dbGetAll=s=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
-const dbGet=(s,k)=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).get(k);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
-const dbAdd=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).add(d);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
-const dbPut=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(d);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
-const dbDelete=(s,id)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
-const dbClear=s=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+function openDB(){return Promise.resolve();}
+async function dbGetAll(s){const snap=await fdb.collection(s).get();return snap.docs.map(d=>({id:d.id,...d.data()}));}
+async function dbGet(s,k){if(s==='settings'){const d=await fdb.collection('settings').doc(String(k)).get();return d.exists?{key:d.id,...d.data()}:undefined}const d=await fdb.collection(s).doc(String(k)).get();return d.exists?{id:d.id,...d.data()}:undefined}
+async function dbAdd(s,d){if(s==='settings'){const {key,...rest}=d;await fdb.collection('settings').doc(key).set(rest);return key}const ref=await fdb.collection(s).add(d);return ref.id}
+async function dbPut(s,d){if(s==='settings'){const {key,...rest}=d;await fdb.collection('settings').doc(key).set(rest);return}const {id,...rest}=d;await fdb.collection(s).doc(String(id)).set(rest,{merge:true})}
+async function dbDelete(s,id){await fdb.collection(s).doc(String(id)).delete()}
+async function dbClear(s){const snap=await fdb.collection(s).get();const batch=fdb.batch();snap.docs.forEach(d=>batch.delete(d.ref));await batch.commit()}
+async function uploadPhoto(file,groupId){const path=`students/${groupId}/${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name}`;const ref=fstorage.ref(path);await ref.put(file);const url=await ref.getDownloadURL();return {url,path}}
+async function deletePhoto(path){if(!path)return;try{await fstorage.ref(path).delete()}catch(e){}}
 
 /* ── Settings ── */
 async function loadSettings(){const t=await dbGet('settings','title'),c=await dbGet('settings','copy');if(t)appTitle=t.value;if(c)appCopy=c.value;applySettings()}
@@ -536,9 +570,9 @@ const dz=$('drop-zone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');loadFiles(e.dataTransfer.files)});
-function loadFiles(files){const imgs=Array.from(files).filter(f=>f.type.startsWith('image/'));if(!imgs.length)return;const sel=$('upload-group-select');const gid=(isAdmin&&sel&&sel.value)?parseInt(sel.value):currentGroupId;let done=0;imgs.forEach(f=>{const r=new FileReader();r.onload=async ev=>{const name=f.name.replace(/\.[^.]+$/,'');await dbAdd('students',{name,src:ev.target.result,groupId:gid,desc:''});done++;if(done===imgs.length){students=await dbGetAll('students');renderManage();updateHome()}};r.readAsDataURL(f)})}
-async function delStudent(id){await dbDelete('students',id);students=await dbGetAll('students');renderManage();updateHome()}
-async function clearAllStudents(){const list=currentGroupStudents();if(!list.length)return;if(!confirm(`이 그룹의 학생 ${list.length}명을 모두 삭제할까요?`))return;for(const s of list)await dbDelete('students',s.id);students=await dbGetAll('students');renderManage();updateHome()}
+async function loadFiles(files){const imgs=Array.from(files).filter(f=>f.type.startsWith('image/'));if(!imgs.length)return;const sel=$('upload-group-select');const gid=(isAdmin&&sel&&sel.value)?sel.value:currentGroupId;const dz=$('drop-zone');const origHTML=dz.innerHTML;dz.innerHTML='<div class="upload-icon">⏳</div><p>업로드 중 0/'+imgs.length+'...</p>';let done=0;for(const f of imgs){const name=f.name.replace(/\.[^.]+$/,'');try{const {url,path}=await uploadPhoto(f,gid);await dbAdd('students',{name,src:url,photoPath:path,groupId:gid,desc:''})}catch(e){alert(name+' 업로드 실패: '+e.message)}done++;dz.innerHTML='<div class="upload-icon">⏳</div><p>업로드 중 '+done+'/'+imgs.length+'...</p>'}dz.innerHTML=origHTML;students=await dbGetAll('students');renderManage();updateHome()}
+async function delStudent(id){const s=students.find(x=>x.id===id);await dbDelete('students',id);if(s&&s.photoPath)deletePhoto(s.photoPath);students=await dbGetAll('students');renderManage();updateHome()}
+async function clearAllStudents(){const list=currentGroupStudents();if(!list.length)return;if(!confirm(`이 그룹의 학생 ${list.length}명을 모두 삭제할까요?`))return;for(const s of list){await dbDelete('students',s.id);if(s.photoPath)deletePhoto(s.photoPath)}students=await dbGetAll('students');renderManage();updateHome()}
 
 /* ── Groups & Admin ── */
 async function ensureDefaultGroup(){
@@ -549,17 +583,9 @@ async function ensureDefaultGroup(){
   if(changed)students=await dbGetAll('students');
   if(currentGroupId===null||!groups.some(g=>g.id===currentGroupId))currentGroupId=groups[0].id;
 }
-function toggleAdmin(){
-  if(isAdmin){isAdmin=false;renderAdminUI();return}
-  const pw=prompt('관리자 비밀번호를 입력하세요');
-  if(pw===null)return;
-  if(pw===ADMIN_PIN){isAdmin=true;renderAdminUI()}else{alert('비밀번호가 올바르지 않아요')}
-}
+function toggleAdmin(){/* 혼자 사용하는 앱이라 관리자 잠금을 사용하지 않아요 */}
 function renderAdminUI(){
-  $('hlock').classList.toggle('unlocked',isAdmin);
-  $('hlock').textContent=isAdmin?'🔓':'🔒';
-  $('admin-badge').style.display=isAdmin?'inline-block':'none';
-  $('card-groups').style.display=isAdmin?'flex':'none';
+  $('card-groups').style.display='flex';
   renderManage();renderGallery();
 }
 function currentGroupStudents(){return students.filter(s=>s.groupId===currentGroupId)}
@@ -595,7 +621,7 @@ async function deleteGroup(id){
   if(groups.length<=1){alert('최소 한 개의 그룹은 있어야 해요');return}
   const cnt=students.filter(s=>s.groupId===id).length;
   if(!confirm(cnt?`이 그룹의 학생 ${cnt}명도 함께 삭제됩니다. 삭제할까요?`:'이 그룹을 삭제할까요?'))return;
-  for(const s of students.filter(s=>s.groupId===id))await dbDelete('students',s.id);
+  for(const s of students.filter(s=>s.groupId===id)){await dbDelete('students',s.id);if(s.photoPath)deletePhoto(s.photoPath)}
   await dbDelete('groups',id);
   students=await dbGetAll('students');groups=await dbGetAll('groups');
   if(currentGroupId===id)currentGroupId=groups[0]?groups[0].id:null;
@@ -606,7 +632,7 @@ function renderGroupsScreen(){
   groups.forEach(g=>{
     const cnt=students.filter(s=>s.groupId===g.id).length;
     const d=document.createElement('div');d.className='group-manage-row';
-    d.innerHTML=`<span class="gname">${g.name}</span><span class="gcount">${cnt}명</span><button class="gm-btn" onclick="renameGroup(${g.id})">이름변경</button><button class="gm-btn danger" onclick="deleteGroup(${g.id})">삭제</button>`;
+    d.innerHTML=`<span class="gname">${g.name}</span><span class="gcount">${cnt}명</span><button class="gm-btn" onclick="renameGroup('${g.id}')">이름변경</button><button class="gm-btn danger" onclick="deleteGroup('${g.id}')">삭제</button>`;
     list.appendChild(d);
   });
 }
@@ -641,7 +667,7 @@ async function saveStudentDetail(){
 }
 
 /* ── Manage ── */
-function renderManage(){const g=$('stu-grid'),c=$('manage-count'),cb=$('clear-btn');const list=currentGroupStudents();c.textContent=list.length?`등록된 학생: ${list.length}명`:'등록된 학생 없음';cb.style.display=list.length?'inline-flex':'none';g.innerHTML='';list.forEach(s=>{const d=document.createElement('div');d.className='s-thumb';d.innerHTML=`<img src="${s.src}" alt="${s.name}" onclick="openStudentModal(${s.id})"><button class="del" onclick="delStudent(${s.id})">×</button><div class="sn">${s.name}</div>${s.desc?`<div class="sdesc">${s.desc}</div>`:''}`;g.appendChild(d)});const ub=$('upload-target-wrap');if(ub)ub.style.display=(isAdmin&&groups.length>1)?'block':'none';populateGroupSelect()}
+function renderManage(){const g=$('stu-grid'),c=$('manage-count'),cb=$('clear-btn');const list=currentGroupStudents();c.textContent=list.length?`등록된 학생: ${list.length}명`:'등록된 학생 없음';cb.style.display=list.length?'inline-flex':'none';g.innerHTML='';list.forEach(s=>{const d=document.createElement('div');d.className='s-thumb';d.innerHTML=`<img src="${s.src}" alt="${s.name}" onclick="openStudentModal('${s.id}')"><button class="del" onclick="delStudent('${s.id}')">×</button><div class="sn">${s.name}</div>${s.desc?`<div class="sdesc">${s.desc}</div>`:''}`;g.appendChild(d)});const ub=$('upload-target-wrap');if(ub)ub.style.display=(isAdmin&&groups.length>1)?'block':'none';populateGroupSelect()}
 
 /* ── Home ── */
 function updateHome(){renderGroupChips();const c=$('home-stu-cnt'),dot=$('home-dot');const n=currentGroupStudents().length;if(n){c.textContent=`학생 ${n}명 등록됨`;dot.style.background='var(--success)'}else{c.textContent='학생 정보 없음 — 관리에서 사진을 추가하세요';dot.style.background='var(--border)'}}
@@ -726,8 +752,36 @@ $('install-btn').addEventListener('click',async()=>{if(!deferredPrompt)return;de
 window.addEventListener('appinstalled',hideBanner);
 function hideBanner(){$('install-banner').style.display='none'}
 
-/* ── Init ── */
-(async()=>{runSplash();await openDB();students=await dbGetAll('students');records=await dbGetAll('records');await ensureDefaultGroup();await loadSettings();updateHome();renderManage()})();
+/* ── Auth & Init (조용한 익명 로그인, 화면 없음) ── */
+async function bootApp(){
+  await openDB();
+  students=await dbGetAll('students');
+  records=await dbGetAll('records');
+  await ensureDefaultGroup();
+  await loadSettings();
+  updateHome();renderManage();
+  runSplash();
+}
+(async()=>{
+  const appR=$('app-root'),loading=$('loading-overlay');
+  try{
+    if(!fauth.currentUser)await fauth.signInAnonymously();
+  }catch(e){
+    loading.textContent='연결 실패: '+e.message;
+    return;
+  }
+  fauth.onAuthStateChanged(async user=>{
+    if(!user)return;
+    try{
+      appR.classList.add('show');
+      loading.classList.add('hide');
+      await bootApp();
+    }catch(e){
+      loading.classList.remove('hide');
+      loading.textContent='데이터를 불러오지 못했어요: '+e.message;
+    }
+  });
+})();
 </script>
 </body>
 </html>
