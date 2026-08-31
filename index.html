@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="이름퀴즈">
+<meta name="theme-color" content="#0d1117">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>구미대 이름퀴즈</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--card:#1c2128;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#e8533a;--accent2:#3b82f6;--gold:#f0a500;--success:#3fb950;--danger:#f85149;--header-h:56px;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none}
+body{padding-top:var(--safe-top);padding-bottom:var(--safe-bot)}
+
+/* Splash */
+#splash{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity 0.6s;padding:2rem}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-school{font-size:12px;letter-spacing:3px;color:var(--accent);font-weight:500;margin-bottom:14px;text-transform:uppercase;text-align:center}
+.splash-title{font-family:'Gmarket Sans',sans-serif;font-size:26px;font-weight:700;text-align:center;line-height:1.45;margin-bottom:8px}
+.splash-sub{font-size:14px;color:var(--muted);margin-bottom:48px;letter-spacing:1px}
+.splash-bar{width:200px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.splash-fill{height:100%;width:0;background:var(--accent);border-radius:2px;transition:width 0.05s linear}
+.splash-dots{display:flex;gap:6px;margin-top:16px}
+.splash-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:background 0.3s}
+.splash-dot.on{background:var(--accent)}
+.splash-copy{position:absolute;bottom:calc(var(--safe-bot) + 20px);font-size:11px;color:var(--border);text-align:center;line-height:1.7;left:1rem;right:1rem}
+
+/* Header */
+header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);background:rgba(13,17,23,0.93);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1rem;gap:8px;z-index:100}
+.hback{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:6px;display:none;font-family:inherit;line-height:1}
+.htitle{font-family:'Gmarket Sans',sans-serif;font-size:16px;font-weight:700;flex:1;color:var(--text)}
+.hbadge{background:var(--accent);color:#fff;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700;letter-spacing:0.5px}
+.hset{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:6px;line-height:1;display:none}
+
+/* Page */
+.page{margin-top:var(--header-h);min-height:calc(100dvh - var(--header-h));padding:1.25rem 1rem 5rem;max-width:600px;margin-left:auto;margin-right:auto}
+.screen{display:none}.screen.active{display:block}
+
+/* Home */
+.home-hero{text-align:center;padding:1.75rem 0 1.25rem}
+.home-hero .school{font-size:11px;letter-spacing:2px;color:var(--accent);font-weight:500;margin-bottom:8px}
+.home-hero h2{font-family:'Gmarket Sans',sans-serif;font-size:21px;font-weight:700;line-height:1.4;margin-bottom:4px}
+.home-hero p{font-size:13px;color:var(--muted)}
+.stu-summary{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 0;font-size:13px;color:var(--muted)}
+.stu-dot{width:8px;height:8px;border-radius:50%}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:1.25rem}
+.menu-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1rem;cursor:pointer;transition:all 0.2s;text-align:left;position:relative;overflow:hidden}
+.menu-card:hover{border-color:var(--accent);background:var(--bg2)}.menu-card:active{transform:scale(0.97)}
+.menu-icon{font-size:26px;margin-bottom:8px;display:block}
+.menu-label{font-size:15px;font-weight:700;font-family:'Gmarket Sans',sans-serif;margin-bottom:3px}
+.menu-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.menu-accent{position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent);opacity:0;transition:opacity 0.2s}
+.menu-card:hover .menu-accent{opacity:1}
+.home-copy{text-align:center;margin-top:2rem;font-size:11px;color:var(--border);line-height:1.7}
+
+/* Manage */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg2)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(232,83,58,0.05)}
+.upload-icon{font-size:32px;margin-bottom:8px}
+.upload-zone p{font-size:13px;color:var(--muted);line-height:1.7}
+.upload-zone strong{color:var(--text);font-weight:500}
+.tip{background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--gold);line-height:1.6;margin-top:10px}
+.stu-count-bar{display:flex;justify-content:space-between;align-items:center;margin:1rem 0 0.5rem}
+.stu-count-bar span{font-size:13px;color:var(--muted)}
+.stu-grid-manage{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:10px}
+.s-thumb{text-align:center;position:relative}
+.s-thumb img{width:56px;height:56px;object-fit:cover;border-radius:50%;border:2px solid var(--border);display:block;margin:0 auto;transition:border-color 0.2s}
+.s-thumb:hover img{border-color:var(--accent)}
+.s-thumb .sn{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72px;margin-left:auto;margin-right:auto}
+.s-thumb .del{position:absolute;top:-3px;right:5px;width:20px;height:20px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s}
+.s-thumb:hover .del,.del:focus{opacity:1}
+@media(hover:none){.s-thumb .del{opacity:1}}
+
+/* Gallery — 1 per row */
+.gallery-toolbar{display:flex;gap:8px;margin-bottom:1rem;align-items:center}
+.gallery-toolbar span{font-size:13px;color:var(--muted);flex:1}
+.sort-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;padding:6px 12px;cursor:pointer;transition:all 0.15s;font-family:inherit}
+.sort-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.gallery-list{display:flex;flex-direction:column;gap:12px}
+.gallery-card{background:var(--card);border:1px solid var(--border);border-radius:16px;display:flex;align-items:center;gap:1.25rem;padding:1rem 1.25rem}
+.gallery-photo{width:100px;height:100px;object-fit:cover;border-radius:14px;border:2px solid var(--border);flex-shrink:0}
+.gallery-info .gname{font-family:'Gmarket Sans',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px}
+.gallery-info .gnum{font-size:13px;color:var(--muted)}
+
+/* Settings */
+.settings-section{margin-bottom:1.5rem}
+.settings-label{font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:500;display:block}
+.settings-input{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:15px;background:var(--bg3);color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color 0.2s;-webkit-appearance:none;resize:vertical}
+.settings-input:focus{border-color:var(--accent2)}
+.settings-preview{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;margin-top:10px}
+.settings-preview .pre-school{font-size:11px;letter-spacing:2px;color:var(--accent);font-weight:500;margin-bottom:6px}
+.settings-preview .pre-title{font-family:'Gmarket Sans',sans-serif;font-size:18px;font-weight:700;line-height:1.4}
+
+/* Quiz Setup */
+.diff-label{font-size:14px;font-weight:500;margin-bottom:10px}
+.diff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.5rem}
+.diff-card{background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:14px 8px;text-align:center;cursor:pointer;transition:all 0.2s}
+.diff-card:hover,.diff-card.on{border-color:var(--accent)}.diff-card.on{background:rgba(232,83,58,0.12)}
+.diff-card .dc{font-size:22px;margin-bottom:4px}
+.diff-card .dn{font-size:15px;font-weight:700;font-family:'Gmarket Sans',sans-serif}
+.diff-card .dd{font-size:11px;color:var(--muted);margin-top:2px}
+.preview-section{margin-bottom:1.5rem}
+.preview-title{font-size:14px;font-weight:500;margin-bottom:10px;color:var(--muted)}
+.preview-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.preview-scroll::-webkit-scrollbar{display:none}
+.preview-item{flex-shrink:0;text-align:center;width:72px}
+.preview-item img{width:64px;height:64px;object-fit:cover;border-radius:50%;border:2px solid var(--border);margin-bottom:5px}
+.preview-item .pn{font-size:11px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:72px}
+
+/* Quiz */
+.prog-wrap{margin-bottom:1.25rem}
+.prog-meta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px}
+.prog-track{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.4s ease}
+.quiz-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem 1.25rem;text-align:center}
+.qphoto{width:200px;height:200px;margin:0 auto 1.25rem;border-radius:50%;overflow:hidden;border:4px solid var(--border);box-shadow:0 0 0 8px rgba(232,83,58,0.08)}
+.qphoto img{width:100%;height:100%;object-fit:cover}
+.q-label{font-size:14px;color:var(--muted);margin-bottom:1rem}
+.tabs{display:flex;gap:4px;background:var(--bg3);border-radius:10px;padding:4px;margin-bottom:1rem}
+.tab{flex:1;padding:7px 0;text-align:center;border-radius:8px;font-size:12px;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:inherit;font-weight:500;transition:all 0.2s}
+.tab.on{background:var(--bg2);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,0.3)}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice{padding:12px 8px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;font-size:14px;font-weight:500;color:var(--text);transition:all 0.15s;text-align:center;font-family:inherit}
+.choice:hover:not(:disabled){border-color:var(--accent2);background:rgba(59,130,246,0.1)}
+.choice:active:not(:disabled){transform:scale(0.97)}
+.choice.correct{border-color:var(--success);background:rgba(63,185,80,0.1);color:var(--success)}
+.choice.wrong{border-color:var(--danger);background:rgba(248,81,73,0.1);color:var(--danger)}
+.choice.reveal{border-color:var(--accent2);background:rgba(59,130,246,0.1);color:var(--accent2)}
+.choice:disabled{cursor:default;transform:none}
+
+/* Type & Voice input */
+.input-row{display:flex;gap:8px;align-items:center}
+.input-row input{flex:1;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:15px;background:var(--bg3);color:var(--text);font-family:inherit;outline:none;transition:border-color 0.2s;-webkit-appearance:none}
+.input-row input:focus{border-color:var(--accent2)}
+.input-row input:disabled{opacity:0.5}
+.voice-btn{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg3);color:var(--muted);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0}
+.voice-btn.on{background:rgba(248,81,73,0.15);border-color:var(--danger);color:var(--danger);animation:pulse 1s infinite}
+.voice-btn:disabled{opacity:0.35;cursor:default;animation:none}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.voice-hint{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;min-height:18px}
+
+.feedback{margin-top:10px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:500;text-align:center;min-height:42px;display:flex;align-items:center;justify-content:center}
+.feedback.ok{background:rgba(63,185,80,0.1);color:var(--success)}
+.feedback.no{background:rgba(248,81,73,0.1);color:var(--danger)}
+#next-btn{display:none;margin-top:10px;width:100%}
+
+/* Result */
+.score-strip{display:flex;background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border);margin-bottom:1.25rem}
+.sc{flex:1;padding:14px 0;text-align:center;border-right:1px solid var(--border)}.sc:last-child{border-right:none}
+.sc .sv{font-size:22px;font-weight:700;font-family:'Gmarket Sans',sans-serif}
+.sc .sl{font-size:11px;color:var(--muted);margin-top:2px}
+.ok-c{color:var(--success)}.no-c{color:var(--danger)}.pct-c{color:var(--accent)}.gold-c{color:var(--gold)}
+.missed-title{font-size:14px;font-weight:500;margin:1.5rem 0 0.75rem}
+.missed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:10px}
+.missed-item{text-align:center}
+.missed-item img{width:52px;height:52px;object-fit:cover;border-radius:50%;border:2px solid var(--danger);display:block;margin:0 auto}
+.missed-item .mn{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* Records */
+.rec-empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px}
+.rec-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.rec-rank{font-family:'Gmarket Sans',sans-serif;font-size:22px;font-weight:700;color:var(--border);min-width:28px;text-align:center}
+.rec-rank.r1{color:var(--gold)}.rec-rank.r2{color:var(--muted)}.rec-rank.r3{color:#cd7f32}
+.rec-info{flex:1}
+.rec-date{font-size:12px;color:var(--muted);margin-bottom:3px}
+.rec-detail{font-size:13px;color:var(--text)}
+.rec-pct{font-family:'Gmarket Sans',sans-serif;font-size:20px;font-weight:700;color:var(--accent)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 18px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s;border:1.5px solid transparent;font-family:inherit}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{background:#d4472e}
+.btn-primary:disabled{opacity:0.35;cursor:default;transform:none}
+.btn-outline{background:transparent;color:var(--text);border-color:var(--border)}.btn-outline:hover{background:var(--bg2)}
+.btn-ghost{background:transparent;color:var(--muted);border-color:transparent;font-size:13px}.btn-ghost:hover{color:var(--text)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:1.25rem}
+.btn-full{width:100%}
+.sec-title{font-family:'Gmarket Sans',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px}
+.sec-sub{font-size:13px;color:var(--muted);margin-bottom:1.25rem;line-height:1.6}
+
+/* Install banner */
+#install-banner{display:none;position:fixed;bottom:calc(var(--safe-bot) + 12px);left:12px;right:12px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;flex-direction:row;align-items:center;gap:10px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+#install-banner p{flex:1;font-size:13px;line-height:1.4}
+#install-banner p strong{font-weight:700;display:block;margin-bottom:2px}
+#install-banner p span{color:var(--muted)}
+.ibtn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;font-family:inherit}
+.iclose{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px}
+
+/* Groups & Admin */
+.group-chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none;justify-content:center;flex-wrap:wrap}
+.group-chips::-webkit-scrollbar{display:none}
+.gchip{flex-shrink:0;background:var(--bg3);border:1.5px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.gchip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.hlock{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:6px;line-height:1}
+.hlock.unlocked{color:var(--gold)}
+.admin-badge{display:inline-block;background:var(--gold);color:#1c1300;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle}
+.group-manage-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.group-manage-row .gname{flex:1;font-weight:500}
+.group-manage-row .gcount{font-size:12px;color:var(--muted)}
+.gm-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:6px 10px;cursor:pointer}
+.gm-btn.danger{color:var(--danger)}
+.add-group-row{display:flex;gap:8px;margin-top:1rem}
+.add-group-row input{flex:1}
+.upload-target{margin-bottom:12px}
+.upload-target label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+.upload-target select{width:100%}
+.gallery-desc{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+.s-thumb .sdesc{font-size:10px;color:var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72px;margin:0 auto}
+.s-thumb img{cursor:pointer}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:500;padding:1.25rem}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.5rem;width:100%;max-width:380px;max-height:88vh;overflow-y:auto}
+.modal-box h3{font-family:'Gmarket Sans',sans-serif;font-size:16px;margin-bottom:14px}
+.modal-box .settings-label{margin-top:12px}
+.modal-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 10px;border:2px solid var(--border)}
+</style>
+</head>
+<body>
+
+<!-- Splash -->
+<div id="splash">
+  <div class="splash-school">GUMI UNIVERSITY</div>
+  <div class="splash-title" id="splash-title">비주얼게임컨텐츠스쿨<br>2026학년도 신입생</div>
+  <div class="splash-sub">이름 외우기 퀴즈</div>
+  <div class="splash-bar"><div class="splash-fill" id="splash-fill"></div></div>
+  <div class="splash-dots">
+    <div class="splash-dot on" id="sd0"></div>
+    <div class="splash-dot" id="sd1"></div>
+    <div class="splash-dot" id="sd2"></div>
+  </div>
+  <div class="splash-copy" id="splash-copy">Copyright © kjyg2627@gmail.com<br>All Rights Reserved</div>
+</div>
+
+<!-- Header -->
+<header>
+  <button class="hback" id="hback" onclick="navBack()">←</button>
+  <div class="htitle" id="htitle">구미대 이름퀴즈</div>
+  <button class="hlock" id="hlock" onclick="toggleAdmin()" title="관리자 모드">🔒</button>
+  <button class="hset" id="hset" onclick="gotoScreen('s-settings')" title="설정">⚙</button>
+  <span class="hbadge">2026</span>
+</header>
+
+<!-- Install Banner -->
+<div id="install-banner">
+  <p><strong>홈 화면에 설치</strong><span>앱처럼 빠르게 실행</span></p>
+  <button class="ibtn" id="install-btn">설치</button>
+  <button class="iclose" onclick="hideBanner()">×</button>
+</div>
+
+<div class="page">
+
+<!-- HOME -->
+<div id="s-home" class="screen active">
+  <div class="home-hero">
+    <div class="school">GUMI UNIVERSITY</div>
+    <h2 id="home-title">비주얼게임컨텐츠스쿨<br>2026학년도 신입생</h2>
+    <p>사진을 보고 이름을 맞춰보세요</p>
+    <div class="stu-summary">
+      <div class="stu-dot" id="home-dot" style="background:var(--border)"></div>
+      <span id="home-stu-cnt">학생 정보 없음 — 관리에서 사진을 추가하세요</span>
+      <span class="admin-badge" id="admin-badge" style="display:none">관리자 모드</span>
+    </div>
+    <div class="group-chips" id="group-chips"></div>
+  </div>
+  <div class="menu-grid">
+    <div class="menu-card" onclick="gotoScreen('s-gallery')">
+      <div class="menu-accent"></div><span class="menu-icon">👥</span>
+      <div class="menu-label">전체 학생 보기</div><div class="menu-desc">사진과 이름 전체 목록</div>
+    </div>
+    <div class="menu-card" onclick="gotoScreen('s-quiz-setup')">
+      <div class="menu-accent"></div><span class="menu-icon">🎯</span>
+      <div class="menu-label">퀴즈 시작</div><div class="menu-desc">난이도 선택 후 도전</div>
+    </div>
+    <div class="menu-card" onclick="gotoScreen('s-records')">
+      <div class="menu-accent"></div><span class="menu-icon">🏆</span>
+      <div class="menu-label">기록실</div><div class="menu-desc">퀴즈 기록 및 성적표</div>
+    </div>
+    <div class="menu-card" onclick="gotoScreen('s-manage')">
+      <div class="menu-accent"></div><span class="menu-icon">⚙️</span>
+      <div class="menu-label">학생 관리</div><div class="menu-desc">사진 추가 / 삭제 / 설명 편집</div>
+    </div>
+    <div class="menu-card" id="card-groups" onclick="gotoScreen('s-groups')" style="display:none">
+      <div class="menu-accent"></div><span class="menu-icon">🗂️</span>
+      <div class="menu-label">그룹 관리</div><div class="menu-desc">새 그룹 추가 / 이름변경 / 삭제</div>
+    </div>
+  </div>
+  <div class="home-copy" id="home-copy">Copyright © kjyg2627@gmail.com<br>All Rights Reserved</div>
+</div>
+
+<!-- MANAGE -->
+<div id="s-manage" class="screen">
+  <p class="sec-title">학생 관리</p>
+  <p class="sec-sub">사진을 한 번 등록하면 앱을 닫아도 유지돼요</p>
+  <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <div class="upload-icon">📁</div>
+    <p><strong>클릭하거나 사진을 끌어다 놓으세요</strong><br>jpg, png, webp — 여러 장 동시 선택 가능</p>
+  </div>
+  <input type="file" id="file-input" accept="image/*" multiple style="display:none">
+  <div class="tip">💡 파일명이 학생 이름이 돼요 — 예) <strong>홍길동.jpg</strong></div>
+  <div class="upload-target" id="upload-target-wrap" style="display:none">
+    <label>업로드할 그룹 선택</label>
+    <select id="upload-group-select"></select>
+  </div>
+  <div class="stu-count-bar">
+    <span id="manage-count">등록된 학생 없음</span>
+    <button class="btn btn-ghost" onclick="clearAllStudents()" id="clear-btn" style="display:none">전체 삭제</button>
+  </div>
+  <div class="stu-grid-manage" id="stu-grid"></div>
+</div>
+
+<!-- GROUPS (admin) -->
+<div id="s-groups" class="screen">
+  <p class="sec-title">그룹 관리</p>
+  <p class="sec-sub">학과·동아리·교수님 등 새로운 그룹을 만들어 사진을 따로 관리하세요</p>
+  <div id="groups-list"></div>
+  <div class="add-group-row">
+    <input type="text" id="new-group-name" placeholder="새 그룹 이름 (예: 게임그래픽전공 3학년)">
+    <button class="btn btn-primary" onclick="addGroup()">추가</button>
+  </div>
+</div>
+
+<!-- GALLERY -->
+<div id="s-gallery" class="screen">
+  <div class="gallery-toolbar">
+    <span id="gallery-cnt"></span>
+    <button class="sort-btn on" id="sort-name" onclick="setSortGallery('name')">이름순</button>
+    <button class="sort-btn" id="sort-rand" onclick="setSortGallery('rand')">랜덤</button>
+  </div>
+  <div class="gallery-list" id="gallery-list"></div>
+  <div id="gallery-empty" style="display:none" class="rec-empty">
+    <div style="font-size:40px;margin-bottom:12px">👥</div>
+    등록된 학생이 없어요<br>학생 관리에서 사진을 추가해주세요
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="s-settings" class="screen">
+  <p class="sec-title">앱 설정</p>
+  <p class="sec-sub">제목과 저작권 표기를 편집할 수 있어요</p>
+
+  <div class="settings-section">
+    <label class="settings-label" for="set-title">학과명 / 제목 (줄바꿈: 엔터)</label>
+    <textarea class="settings-input" id="set-title" rows="2" oninput="updatePreview()"></textarea>
+  </div>
+  <div class="settings-section">
+    <div class="settings-label">미리보기</div>
+    <div class="settings-preview">
+      <div class="pre-school">GUMI UNIVERSITY</div>
+      <div class="pre-title" id="preview-title">비주얼게임컨텐츠스쿨<br>2026학년도 신입생</div>
+    </div>
+  </div>
+  <div class="settings-section">
+    <label class="settings-label" for="set-copy">저작권 표기</label>
+    <input class="settings-input" id="set-copy" type="text" oninput="updateCopyPreview()">
+    <div style="margin-top:8px;font-size:12px;color:var(--muted)" id="copy-preview"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveSettings()">저장하기</button>
+    <button class="btn btn-ghost" onclick="resetSettings()">기본값으로</button>
+  </div>
+</div>
+
+<!-- QUIZ SETUP -->
+<div id="s-quiz-setup" class="screen">
+  <p class="sec-title">퀴즈 설정</p>
+  <p class="sec-sub">먼저 학생 사진과 이름을 훑어본 뒤 퀴즈가 시작돼요</p>
+  <div class="diff-label">난이도 선택</div>
+  <div class="diff-grid">
+    <div class="diff-card on" data-n="5" onclick="selectDiff(this,5)"><div class="dc">🌱</div><div class="dn">5명</div><div class="dd">입문</div></div>
+    <div class="diff-card" data-n="10" onclick="selectDiff(this,10)"><div class="dc">🔥</div><div class="dn">10명</div><div class="dd">보통</div></div>
+    <div class="diff-card" data-n="20" onclick="selectDiff(this,20)"><div class="dc">💀</div><div class="dn">20명</div><div class="dd">어려움</div></div>
+    <div class="diff-card" data-n="30" onclick="selectDiff(this,30)"><div class="dc">👑</div><div class="dn">30명</div><div class="dd">고수</div></div>
+    <div class="diff-card" data-n="50" onclick="selectDiff(this,50)"><div class="dc">🌊</div><div class="dn">50명</div><div class="dd">전설</div></div>
+    <div class="diff-card" data-n="999" onclick="selectDiff(this,999)"><div class="dc">⚡</div><div class="dn">전체</div><div class="dd">무한도전</div></div>
+  </div>
+  <div class="preview-section" id="preview-section" style="display:none">
+    <div class="preview-title">📚 이번 퀴즈에 나올 학생들 (미리 보기)</div>
+    <div class="preview-scroll" id="preview-scroll"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary btn-full" onclick="beginQuiz()">퀴즈 시작 →</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="s-quiz" class="screen">
+  <div class="prog-wrap">
+    <div class="prog-meta"><span id="q-num"></span><span id="q-score" style="font-weight:500"></span></div>
+    <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+  </div>
+  <div class="quiz-card">
+    <div class="qphoto"><img id="qphoto" src="" alt="학생"></div>
+    <p class="q-label">이 학생의 이름은?</p>
+    <div class="tabs">
+      <button class="tab on" id="tab-mc" onclick="setMode('mc')">4지선다</button>
+      <button class="tab" id="tab-ty" onclick="setMode('ty')">직접 입력</button>
+      <button class="tab" id="tab-vc" onclick="setMode('vc')">🎤 음성</button>
+    </div>
+    <div id="area-mc"><div class="choices" id="choices"></div></div>
+    <div id="area-ty" style="display:none">
+      <div class="input-row">
+        <input type="text" id="type-in" placeholder="이름을 입력하세요" onkeydown="if(event.key==='Enter')checkTyped()">
+        <button class="btn btn-primary" style="padding:11px 14px;white-space:nowrap" onclick="checkTyped()">확인</button>
+      </div>
+    </div>
+    <div id="area-vc" style="display:none">
+      <div class="input-row">
+        <input type="text" id="voice-text" placeholder="말하면 여기에 나타나요" readonly>
+        <button class="voice-btn" id="voice-btn" onclick="toggleVoice()" title="마이크">🎤</button>
+        <button class="btn btn-primary" style="padding:11px 14px;white-space:nowrap" onclick="submitVoice()">확인</button>
+      </div>
+      <div class="voice-hint" id="voice-hint">마이크 버튼을 눌러 이름을 말해보세요</div>
+    </div>
+    <div class="feedback" id="fb"></div>
+    <button class="btn btn-primary btn-full" id="next-btn" onclick="nextQ()">다음 문제 →</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="s-result" class="screen">
+  <p class="sec-title" style="margin-bottom:1rem">퀴즈 결과 🎯</p>
+  <div class="score-strip">
+    <div class="sc"><div class="sv ok-c" id="r-ok"></div><div class="sl">맞음</div></div>
+    <div class="sc"><div class="sv no-c" id="r-no"></div><div class="sl">틀림</div></div>
+    <div class="sc"><div class="sv pct-c" id="r-pct"></div><div class="sl">정답률</div></div>
+    <div class="sc"><div class="sv gold-c" id="r-diff"></div><div class="sl">난이도</div></div>
+  </div>
+  <div id="missed-wrap" style="display:none">
+    <p class="missed-title">더 외워야 할 학생 👀</p>
+    <div class="missed-grid" id="missed-grid"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="retryQuiz()">다시 도전</button>
+    <button class="btn btn-outline" onclick="retryMissed()" id="retry-missed-btn" style="display:none">틀린 것만 다시</button>
+    <button class="btn btn-ghost" onclick="gotoScreen('s-home')">홈으로</button>
+  </div>
+</div>
+
+<!-- RECORDS -->
+<div id="s-records" class="screen">
+  <p class="sec-title">기록실</p>
+  <p class="sec-sub">퀴즈를 완료할 때마다 자동으로 저장돼요</p>
+  <div id="records-list"></div>
+  <div class="btn-row" id="rec-clear-row" style="display:none">
+    <button class="btn btn-ghost" onclick="clearRecords()">기록 전체 삭제</button>
+  </div>
+</div>
+
+</div>
+
+<!-- STUDENT DETAIL MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeStudentModal()">
+  <div class="modal-box">
+    <img class="modal-photo" id="modal-photo" src="" alt="">
+    <div id="modal-view-area">
+      <h3 id="modal-name-view" style="text-align:center"></h3>
+      <p class="gallery-desc" id="modal-desc-view" style="text-align:center;margin-top:10px"></p>
+    </div>
+    <div id="modal-edit-area" style="display:none;margin-top:14px">
+      <label class="settings-label">이름</label>
+      <input class="settings-input" id="modal-name-input" type="text">
+      <label class="settings-label" style="margin-top:10px">설명 (선택)</label>
+      <textarea class="settings-input" id="modal-desc-input" rows="3" placeholder="이 사람에 대한 간단한 소개를 적어주세요"></textarea>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-primary" onclick="saveStudentDetail()">저장</button>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-ghost" onclick="closeStudentModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const shuffle=a=>[...a].sort(()=>Math.random()-0.5);
+
+let db,students=[],records=[],quizPool=[],quizDiff=5;
+let cur=0,okCnt=0,noCnt=0,wrongList=[],answered=false,mode='mc';
+let gallerySort='name',deferredPrompt=null;
+let recog=null,isListening=false;
+const DEFAULT_TITLE='비주얼게임컨텐츠스쿨\n2026학년도 신입생';
+const DEFAULT_COPY='Copyright © kjyg2627@gmail.com · All Rights Reserved';
+let appTitle=DEFAULT_TITLE,appCopy=DEFAULT_COPY;
+let groups=[],currentGroupId=null,isAdmin=false,editingStudentId=null;
+const ADMIN_PIN='2626';
+
+/* ── DB ── */
+function openDB(){return new Promise((res,rej)=>{const req=indexedDB.open('StudentQuizDB',4);req.onupgradeneeded=e=>{const d=e.target.result;['students','records','settings','groups'].forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,s==='settings'?{keyPath:'key'}:{keyPath:'id',autoIncrement:true})})};req.onsuccess=e=>{db=e.target.result;res(db)};req.onerror=()=>rej(req.error)})}
+const dbGetAll=s=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const dbGet=(s,k)=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).get(k);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const dbAdd=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).add(d);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const dbPut=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(d);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+const dbDelete=(s,id)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+const dbClear=s=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+
+/* ── Settings ── */
+async function loadSettings(){const t=await dbGet('settings','title'),c=await dbGet('settings','copy');if(t)appTitle=t.value;if(c)appCopy=c.value;applySettings()}
+function applySettings(){const h=appTitle.replace(/\n/g,'<br>');$('splash-title').innerHTML=h;$('home-title').innerHTML=h;$('splash-copy').innerHTML=appCopy.replace(/\n/g,'<br>');$('home-copy').innerHTML=appCopy.replace(/\n/g,'<br>')}
+function updatePreview(){$('preview-title').innerHTML=($('set-title').value||DEFAULT_TITLE).replace(/\n/g,'<br>')}
+function updateCopyPreview(){$('copy-preview').textContent=$('set-copy').value}
+async function saveSettings(){appTitle=$('set-title').value.trim()||DEFAULT_TITLE;appCopy=$('set-copy').value.trim()||DEFAULT_COPY;await dbPut('settings',{key:'title',value:appTitle});await dbPut('settings',{key:'copy',value:appCopy});applySettings();alert('저장됐어요!');navBack()}
+async function resetSettings(){if(!confirm('기본값으로 되돌릴까요?'))return;appTitle=DEFAULT_TITLE;appCopy=DEFAULT_COPY;$('set-title').value=DEFAULT_TITLE;$('set-copy').value=DEFAULT_COPY;await dbPut('settings',{key:'title',value:appTitle});await dbPut('settings',{key:'copy',value:appCopy});applySettings();updatePreview();updateCopyPreview()}
+
+/* ── Splash ── */
+function runSplash(){const fill=$('splash-fill');let pct=0;const iv=setInterval(()=>{pct+=2;fill.style.width=pct+'%';[0,1,2].forEach(i=>$('sd'+i).classList.toggle('on',pct>=(i+1)*33));if(pct>=100){clearInterval(iv);setTimeout(()=>{$('splash').classList.add('hide');setTimeout(()=>$('splash').style.display='none',600)},300)}},30)}
+
+/* ── Nav ── */
+const titles={'s-home':'구미대 이름퀴즈','s-manage':'학생 관리','s-gallery':'전체 학생 보기','s-quiz-setup':'퀴즈 설정','s-quiz':'이름 퀴즈','s-result':'퀴즈 결과','s-records':'기록실','s-settings':'앱 설정','s-groups':'그룹 관리'};
+function gotoScreen(id){
+  stopVoice();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  $('htitle').textContent=titles[id]||'';
+  $('hback').style.display=id==='s-home'?'none':'flex';
+  $('hset').style.display=id==='s-home'?'flex':'none';
+  if(id==='s-gallery')renderGallery();
+  if(id==='s-records')renderRecords();
+  if(id==='s-manage')renderManage();
+  if(id==='s-home')updateHome();
+  if(id==='s-quiz-setup')prepareQuizSetup();
+  if(id==='s-settings'){$('set-title').value=appTitle;$('set-copy').value=appCopy;updatePreview();updateCopyPreview()}
+  if(id==='s-groups'){if(!isAdmin){alert('관리자 모드에서만 접근할 수 있어요');gotoScreen('s-home');return}renderGroupsScreen()}
+  window.scrollTo(0,0);
+}
+function navBack(){gotoScreen('s-home')}
+
+/* ── Files ── */
+$('file-input').addEventListener('change',e=>loadFiles(e.target.files));
+const dz=$('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');loadFiles(e.dataTransfer.files)});
+function loadFiles(files){const imgs=Array.from(files).filter(f=>f.type.startsWith('image/'));if(!imgs.length)return;const sel=$('upload-group-select');const gid=(isAdmin&&sel&&sel.value)?parseInt(sel.value):currentGroupId;let done=0;imgs.forEach(f=>{const r=new FileReader();r.onload=async ev=>{const name=f.name.replace(/\.[^.]+$/,'');await dbAdd('students',{name,src:ev.target.result,groupId:gid,desc:''});done++;if(done===imgs.length){students=await dbGetAll('students');renderManage();updateHome()}};r.readAsDataURL(f)})}
+async function delStudent(id){await dbDelete('students',id);students=await dbGetAll('students');renderManage();updateHome()}
+async function clearAllStudents(){const list=currentGroupStudents();if(!list.length)return;if(!confirm(`이 그룹의 학생 ${list.length}명을 모두 삭제할까요?`))return;for(const s of list)await dbDelete('students',s.id);students=await dbGetAll('students');renderManage();updateHome()}
+
+/* ── Groups & Admin ── */
+async function ensureDefaultGroup(){
+  groups=await dbGetAll('groups');
+  if(!groups.length){await dbAdd('groups',{name:'2026 신입생'});groups=await dbGetAll('groups')}
+  let changed=false;
+  for(const s of students){if(!s.groupId){s.groupId=groups[0].id;await dbPut('students',s);changed=true}}
+  if(changed)students=await dbGetAll('students');
+  if(currentGroupId===null||!groups.some(g=>g.id===currentGroupId))currentGroupId=groups[0].id;
+}
+function toggleAdmin(){
+  if(isAdmin){isAdmin=false;renderAdminUI();return}
+  const pw=prompt('관리자 비밀번호를 입력하세요');
+  if(pw===null)return;
+  if(pw===ADMIN_PIN){isAdmin=true;renderAdminUI()}else{alert('비밀번호가 올바르지 않아요')}
+}
+function renderAdminUI(){
+  $('hlock').classList.toggle('unlocked',isAdmin);
+  $('hlock').textContent=isAdmin?'🔓':'🔒';
+  $('admin-badge').style.display=isAdmin?'inline-block':'none';
+  $('card-groups').style.display=isAdmin?'flex':'none';
+  renderManage();renderGallery();
+}
+function currentGroupStudents(){return students.filter(s=>s.groupId===currentGroupId)}
+function renderGroupChips(){
+  const wrap=$('group-chips');wrap.innerHTML='';
+  if(groups.length<2)return;
+  groups.forEach(g=>{
+    const cnt=students.filter(s=>s.groupId===g.id).length;
+    const b=document.createElement('button');
+    b.className='gchip'+(g.id===currentGroupId?' on':'');
+    b.textContent=`${g.name} (${cnt})`;
+    b.onclick=()=>{currentGroupId=g.id;renderGroupChips();updateHomeCounts();if($('s-manage').classList.contains('active'))renderManage();if($('s-gallery').classList.contains('active'))renderGallery()};
+    wrap.appendChild(b);
+  });
+}
+async function addGroup(){
+  const name=$('new-group-name').value.trim();
+  if(!name){alert('그룹 이름을 입력하세요');return}
+  await dbAdd('groups',{name});
+  groups=await dbGetAll('groups');
+  $('new-group-name').value='';
+  renderGroupsScreen();renderGroupChips();
+}
+async function renameGroup(id){
+  const g=groups.find(x=>x.id===id);
+  const name=prompt('새 그룹 이름',g.name);
+  if(!name)return;
+  g.name=name.trim();await dbPut('groups',g);
+  groups=await dbGetAll('groups');
+  renderGroupsScreen();renderGroupChips();
+}
+async function deleteGroup(id){
+  if(groups.length<=1){alert('최소 한 개의 그룹은 있어야 해요');return}
+  const cnt=students.filter(s=>s.groupId===id).length;
+  if(!confirm(cnt?`이 그룹의 학생 ${cnt}명도 함께 삭제됩니다. 삭제할까요?`:'이 그룹을 삭제할까요?'))return;
+  for(const s of students.filter(s=>s.groupId===id))await dbDelete('students',s.id);
+  await dbDelete('groups',id);
+  students=await dbGetAll('students');groups=await dbGetAll('groups');
+  if(currentGroupId===id)currentGroupId=groups[0]?groups[0].id:null;
+  renderGroupsScreen();renderGroupChips();updateHome();
+}
+function renderGroupsScreen(){
+  const list=$('groups-list');list.innerHTML='';
+  groups.forEach(g=>{
+    const cnt=students.filter(s=>s.groupId===g.id).length;
+    const d=document.createElement('div');d.className='group-manage-row';
+    d.innerHTML=`<span class="gname">${g.name}</span><span class="gcount">${cnt}명</span><button class="gm-btn" onclick="renameGroup(${g.id})">이름변경</button><button class="gm-btn danger" onclick="deleteGroup(${g.id})">삭제</button>`;
+    list.appendChild(d);
+  });
+}
+function populateGroupSelect(){
+  const sel=$('upload-group-select');if(!sel)return;
+  sel.innerHTML='';
+  groups.forEach(g=>{const o=document.createElement('option');o.value=g.id;o.textContent=g.name;if(g.id===currentGroupId)o.selected=true;sel.appendChild(o)});
+}
+function updateHomeCounts(){updateHome()}
+
+/* ── Student Detail Modal ── */
+function openStudentModal(id){
+  const s=students.find(x=>x.id===id);if(!s)return;
+  editingStudentId=id;
+  $('modal-photo').src=s.src;
+  $('modal-name-view').textContent=s.name;
+  $('modal-desc-view').textContent=s.desc||'등록된 설명이 없어요';
+  $('modal-edit-area').style.display=isAdmin?'block':'none';
+  if(isAdmin){$('modal-name-input').value=s.name;$('modal-desc-input').value=s.desc||''}
+  $('modal-overlay').classList.add('show');
+}
+function closeStudentModal(){$('modal-overlay').classList.remove('show');editingStudentId=null}
+async function saveStudentDetail(){
+  if(!editingStudentId)return;
+  const s=students.find(x=>x.id===editingStudentId);if(!s)return;
+  const name=$('modal-name-input').value.trim();
+  if(!name){alert('이름을 입력하세요');return}
+  s.name=name;s.desc=$('modal-desc-input').value.trim();
+  await dbPut('students',s);
+  students=await dbGetAll('students');
+  closeStudentModal();renderManage();renderGallery();updateHome();
+}
+
+/* ── Manage ── */
+function renderManage(){const g=$('stu-grid'),c=$('manage-count'),cb=$('clear-btn');const list=currentGroupStudents();c.textContent=list.length?`등록된 학생: ${list.length}명`:'등록된 학생 없음';cb.style.display=list.length?'inline-flex':'none';g.innerHTML='';list.forEach(s=>{const d=document.createElement('div');d.className='s-thumb';d.innerHTML=`<img src="${s.src}" alt="${s.name}" onclick="openStudentModal(${s.id})"><button class="del" onclick="delStudent(${s.id})">×</button><div class="sn">${s.name}</div>${s.desc?`<div class="sdesc">${s.desc}</div>`:''}`;g.appendChild(d)});const ub=$('upload-target-wrap');if(ub)ub.style.display=(isAdmin&&groups.length>1)?'block':'none';populateGroupSelect()}
+
+/* ── Home ── */
+function updateHome(){renderGroupChips();const c=$('home-stu-cnt'),dot=$('home-dot');const n=currentGroupStudents().length;if(n){c.textContent=`학생 ${n}명 등록됨`;dot.style.background='var(--success)'}else{c.textContent='학생 정보 없음 — 관리에서 사진을 추가하세요';dot.style.background='var(--border)'}}
+
+/* ── Gallery 1-per-row ── */
+function setSortGallery(s){gallerySort=s;$('sort-name').classList.toggle('on',s==='name');$('sort-rand').classList.toggle('on',s==='rand');renderGallery()}
+function renderGallery(){const list=$('gallery-list'),empty=$('gallery-empty');const base=currentGroupStudents();$('gallery-cnt').textContent=base.length?`총 ${base.length}명`:'';if(!base.length){list.style.display='none';empty.style.display='block';return}list.style.display='flex';empty.style.display='none';let arr=[...base];if(gallerySort==='name')arr.sort((a,b)=>a.name.localeCompare(b.name,'ko'));else arr=shuffle(arr);list.innerHTML='';arr.forEach((s,i)=>{const d=document.createElement('div');d.className='gallery-card';d.style.cursor='pointer';d.onclick=()=>openStudentModal(s.id);d.innerHTML=`<img class="gallery-photo" src="${s.src}" alt="${s.name}"><div class="gallery-info"><div class="gname">${s.name}</div><div class="gnum">${i+1}번</div>${s.desc?`<div class="gallery-desc">${s.desc}</div>`:''}</div>`;list.appendChild(d)})}
+
+/* ── Quiz Setup ── */
+function prepareQuizSetup(){const av=currentGroupStudents().length;document.querySelectorAll('.diff-card').forEach(c=>{const n=parseInt(c.dataset.n);c.style.opacity=av<2?'0.4':'1';c.style.pointerEvents=av<2?'none':'auto';if(n>=999)c.querySelector('.dn').textContent=`전체(${av})`});generatePreview()}
+function selectDiff(el,n){document.querySelectorAll('.diff-card').forEach(c=>c.classList.remove('on'));el.classList.add('on');quizDiff=n;generatePreview()}
+function generatePreview(){const pool0=currentGroupStudents();const n=quizDiff>=999?pool0.length:Math.min(quizDiff,pool0.length);if(!n){$('preview-section').style.display='none';return}quizPool=shuffle(pool0).slice(0,n);$('preview-section').style.display='block';const sc=$('preview-scroll');sc.innerHTML='';quizPool.forEach(s=>{const d=document.createElement('div');d.className='preview-item';d.innerHTML=`<img src="${s.src}" alt="${s.name}"><div class="pn">${s.name}</div>`;sc.appendChild(d)})}
+
+/* ── Quiz ── */
+function beginQuiz(){if(!quizPool.length){alert('먼저 학생 사진을 등록해주세요');return}cur=0;okCnt=0;noCnt=0;wrongList=[];quizPool=shuffle(quizPool);gotoScreen('s-quiz');renderQ()}
+function setMode(m){mode=m;['mc','ty','vc'].forEach(x=>{$('tab-'+x).classList.toggle('on',m===x);$('area-'+x).style.display=m===x?'block':'none'});if(m==='ty')setTimeout(()=>$('type-in').focus(),60);if(m!=='vc')stopVoice()}
+function renderQ(){
+  answered=false;stopVoice();
+  const s=quizPool[cur];
+  $('qphoto').src=s.src;
+  $('q-num').textContent=`${cur+1} / ${quizPool.length}`;
+  $('q-score').textContent=`✓ ${okCnt}점`;
+  $('prog').style.width=`${(cur/quizPool.length)*100}%`;
+  $('fb').textContent='';$('fb').className='feedback';
+  $('next-btn').style.display='none';
+  $('type-in').value='';$('type-in').disabled=false;
+  $('voice-text').value='';$('voice-hint').textContent='마이크 버튼을 눌러 이름을 말해보세요';
+  const vb=$('voice-btn');vb.classList.remove('on');vb.textContent='🎤';vb.disabled=false;
+  if(mode==='mc'){
+    const gpAll=currentGroupStudents();const pool=gpAll.length>=4?gpAll:quizPool;
+    const others=shuffle(pool.filter(x=>x.name!==s.name)).slice(0,3);
+    const opts=shuffle([s,...others]);
+    const g=$('choices');g.innerHTML='';
+    opts.forEach(o=>{const b=document.createElement('button');b.className='choice';b.textContent=o.name;b.onclick=()=>checkMC(b,o.name===s.name,s.name);g.appendChild(b)});
+  }else if(mode==='ty'){setTimeout(()=>$('type-in').focus(),80)}
+}
+function checkMC(btn,ok,answer){if(answered)return;answered=true;if(ok){btn.className='choice correct';okCnt++;setFb(true)}else{btn.className='choice wrong';noCnt++;wrongList.push(quizPool[cur]);setFb(false,answer);Array.from($('choices').children).forEach(b=>{if(b.textContent===answer)b.className='choice reveal'})};Array.from($('choices').children).forEach(b=>b.disabled=true);$('q-score').textContent=`✓ ${okCnt}점`;$('next-btn').style.display='block'}
+function checkTyped(){if(answered)return;const val=$('type-in').value.trim();if(!val)return;answered=true;const answer=quizPool[cur].name;const ok=val===answer||answer.includes(val)||val.includes(answer);if(ok){okCnt++;setFb(true)}else{noCnt++;wrongList.push(quizPool[cur]);setFb(false,answer)};$('type-in').disabled=true;$('q-score').textContent=`✓ ${okCnt}점`;$('next-btn').style.display='block'}
+function submitVoice(){if(answered)return;const val=$('voice-text').value.trim();if(!val){alert('먼저 마이크 버튼을 눌러 이름을 말해보세요');return}answered=true;stopVoice();const answer=quizPool[cur].name;const ok=val===answer||answer.includes(val)||val.includes(answer);if(ok){okCnt++;setFb(true)}else{noCnt++;wrongList.push(quizPool[cur]);setFb(false,answer)};$('q-score').textContent=`✓ ${okCnt}점`;$('next-btn').style.display='block'}
+function setFb(ok,answer){const el=$('fb');if(ok){el.textContent='정답! 🎉';el.className='feedback ok'}else{el.textContent=`틀렸어요 — 정답: ${answer}`;el.className='feedback no'}}
+function nextQ(){cur++;if(cur>=quizPool.length){showResult();return}$('type-in').disabled=false;renderQ()}
+
+/* ── Voice ── */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function toggleVoice(){isListening?stopVoice():startVoice()}
+function startVoice(){
+  if(!SR){alert('음성인식은 크롬(Chrome) 브라우저에서 지원돼요');return}
+  recog=new SR();recog.lang='ko-KR';recog.continuous=false;recog.interimResults=true;
+  recog.onstart=()=>{isListening=true;const b=$('voice-btn');b.classList.add('on');b.textContent='⏹';$('voice-hint').textContent='듣는 중… 이름을 말해보세요';$('voice-text').value=''};
+  recog.onresult=e=>{let fin='',mid='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)fin+=e.results[i][0].transcript;else mid+=e.results[i][0].transcript}$('voice-text').value=fin||mid;if(fin)$('voice-hint').textContent=`인식됨: "${fin}"`};
+  recog.onerror=e=>{$('voice-hint').textContent=e.error==='not-allowed'?'마이크 권한이 필요해요':'다시 시도해주세요';stopVoice()};
+  recog.onend=()=>stopVoice();
+  recog.start();
+}
+function stopVoice(){if(recog){try{recog.stop()}catch(e){}recog=null}isListening=false;const b=$('voice-btn');if(b){b.classList.remove('on');b.textContent='🎤'};const h=$('voice-hint');if(h&&h.textContent==='듣는 중… 이름을 말해보세요')h.textContent='인식 완료 — 확인 버튼을 누르세요'}
+
+/* ── Result ── */
+async function showResult(){
+  const pct=Math.round((okCnt/quizPool.length)*100);
+  const n=quizDiff>=999?students.length:Math.min(quizDiff,students.length);
+  const dl=getDiffLabel(n);
+  $('r-ok').textContent=okCnt;$('r-no').textContent=noCnt;$('r-pct').textContent=pct+'%';$('r-diff').textContent=dl;
+  const mg=$('missed-grid'),mw=$('missed-wrap'),rb=$('retry-missed-btn');mg.innerHTML='';
+  if(wrongList.length){mw.style.display='block';rb.style.display='inline-flex';wrongList.forEach(s=>{const d=document.createElement('div');d.className='missed-item';d.innerHTML=`<img src="${s.src}"><div class="mn">${s.name}</div>`;mg.appendChild(d)})}else{mw.style.display='none';rb.style.display='none'}
+  const now=new Date();
+  await dbAdd('records',{date:now.toLocaleDateString('ko-KR'),time:now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}),diff:dl,count:quizPool.length,ok:okCnt,no:noCnt,pct,ts:now.getTime()});
+  records=await dbGetAll('records');
+  gotoScreen('s-result');
+}
+function getDiffLabel(n){if(n<=5)return'입문(5명)';if(n<=10)return'보통(10명)';if(n<=20)return'어려움(20명)';if(n<=30)return'고수(30명)';if(n<=50)return'전설(50명)';return`무한도전(${n}명)`}
+function retryQuiz(){gotoScreen('s-quiz-setup')}
+function retryMissed(){quizPool=shuffle([...new Set(wrongList)]);cur=0;okCnt=0;noCnt=0;wrongList=[];gotoScreen('s-quiz');renderQ()}
+
+/* ── Records ── */
+function renderRecords(){const list=$('records-list'),cr=$('rec-clear-row');if(!records.length){list.innerHTML='<div class="rec-empty"><div style="font-size:40px;margin-bottom:12px">🏆</div>아직 기록이 없어요<br>퀴즈를 완료하면 여기에 저장돼요</div>';cr.style.display='none';return}cr.style.display='flex';const sorted=[...records].sort((a,b)=>b.ts-a.ts);list.innerHTML='';sorted.forEach((r,i)=>{const d=document.createElement('div');d.className='rec-item';const rc=i<3?` r${i+1}`:'';d.innerHTML=`<div class="rec-rank${rc}">${i+1}</div><div class="rec-info"><div class="rec-date">${r.date} ${r.time} · ${r.diff}</div><div class="rec-detail">${r.count}문제 중 ${r.ok}개 정답</div></div><div class="rec-pct">${r.pct}%</div>`;list.appendChild(d)})}
+async function clearRecords(){if(!confirm('기록을 모두 삭제할까요?'))return;await dbClear('records');records=[];renderRecords()}
+
+/* ── PWA ── */
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('install-banner').style.display='flex'});
+$('install-btn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;hideBanner()});
+window.addEventListener('appinstalled',hideBanner);
+function hideBanner(){$('install-banner').style.display='none'}
+
+/* ── Init ── */
+(async()=>{runSplash();await openDB();students=await dbGetAll('students');records=await dbGetAll('records');await ensureDefaultGroup();await loadSettings();updateHome();renderManage()})();
+</script>
+</body>
+</html>
