@@ -225,26 +225,26 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
 .login-box input:focus{border-color:var(--accent2)}
 .login-box button{width:100%;margin-top:8px}
 #login-error{color:var(--danger);font-size:12px;margin-top:10px;min-height:16px}
-#loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;padding:2rem}
-#loading-overlay.hide{display:none}
 #app-root{display:none}
 #app-root.show{display:block}
+#boot-error{display:none;position:fixed;top:0;left:0;right:0;background:var(--danger);color:#fff;font-size:12px;line-height:1.5;padding:10px 14px;z-index:2000;text-align:center}
+#boot-error.show{display:block}
 </style>
 </head>
 <body>
 
+<div id="boot-error"></div>
+
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 const firebaseConfig={apiKey:"AIzaSyC7PzmZXGhOIhtzVSHDOKHaOODqo0HIHm8",authDomain:"gumi-quiz-e8efb.firebaseapp.com",projectId:"gumi-quiz-e8efb",storageBucket:"gumi-quiz-e8efb.firebasestorage.app",messagingSenderId:"918331904734",appId:"1:918331904734:web:d288be925ef20bf158684f",measurementId:"G-NZPWF1F5F3"};
 firebase.initializeApp(firebaseConfig);
-const fauth=firebase.auth();
 const fdb=firebase.firestore();
+fdb.settings({experimentalForceLongPolling:true,useFetchStreams:false,merge:true});
 const fstorage=firebase.storage();
-fdb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 </script>
 
 <div id="app-root">
@@ -757,12 +757,24 @@ async function bootApp(){
   runSplash();
 }
 (async()=>{
-  const appR=$('app-root'),splash=$('splash');
+  const appR=$('app-root'),splash=$('splash'),errBanner=$('boot-error');
   appR.classList.add('show');
+  let done=false;
+  const timeoutId=setTimeout(()=>{
+    if(done)return;
+    errBanner.textContent='⚠ 데이터 연결이 너무 오래 걸려요. 인터넷 연결을 확인하거나 와이파이/모바일데이터를 전환해보세요.';
+    errBanner.classList.add('show');
+    if(splash)splash.classList.add('hide');
+  },12000);
   try{
     await bootApp();
+    done=true;
+    clearTimeout(timeoutId);
   }catch(e){
-    alert('데이터를 불러오지 못했어요: '+e.message);
+    done=true;
+    clearTimeout(timeoutId);
+    errBanner.textContent='⚠ 데이터를 불러오지 못했어요: '+e.message;
+    errBanner.classList.add('show');
     if(splash)splash.classList.add('hide');
   }
 })();
