@@ -233,8 +233,6 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
 </head>
 <body>
 
-<div id="loading-overlay">불러오는 중...</div>
-
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -748,7 +746,7 @@ $('install-btn').addEventListener('click',async()=>{if(!deferredPrompt)return;de
 window.addEventListener('appinstalled',hideBanner);
 function hideBanner(){$('install-banner').style.display='none'}
 
-/* ── Auth & Init (조용한 익명 로그인, 화면 없음) ── */
+/* ── Init (로그인 없음, 바로 실행) ── */
 async function bootApp(){
   await openDB();
   students=await dbGetAll('students');
@@ -759,34 +757,14 @@ async function bootApp(){
   runSplash();
 }
 (async()=>{
-  const appR=$('app-root'),loading=$('loading-overlay'),splash=$('splash');
-  const watchdog=setTimeout(()=>{
-    loading.classList.remove('hide');
-    loading.textContent='로딩이 너무 오래 걸려요. Firebase 설정(익명 로그인/보안규칙)을 확인해주세요.';
-  },10000);
+  const appR=$('app-root'),splash=$('splash');
+  appR.classList.add('show');
   try{
-    if(!fauth.currentUser)await fauth.signInAnonymously();
+    await bootApp();
   }catch(e){
-    clearTimeout(watchdog);
-    loading.classList.remove('hide');
-    loading.textContent='연결 실패: '+e.message;
+    alert('데이터를 불러오지 못했어요: '+e.message);
     if(splash)splash.classList.add('hide');
-    return;
   }
-  fauth.onAuthStateChanged(async user=>{
-    if(!user)return;
-    try{
-      appR.classList.add('show');
-      loading.classList.add('hide');
-      await bootApp();
-      clearTimeout(watchdog);
-    }catch(e){
-      clearTimeout(watchdog);
-      loading.classList.remove('hide');
-      loading.textContent='데이터를 불러오지 못했어요: '+e.message;
-      if(splash)splash.classList.add('hide');
-    }
-  });
 })();
 </script>
 </body>
