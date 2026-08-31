@@ -243,7 +243,7 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
 const firebaseConfig={apiKey:"AIzaSyC7PzmZXGhOIhtzVSHDOKHaOODqo0HIHm8",authDomain:"gumi-quiz-e8efb.firebaseapp.com",projectId:"gumi-quiz-e8efb",storageBucket:"gumi-quiz-e8efb.firebasestorage.app",messagingSenderId:"918331904734",appId:"1:918331904734:web:d288be925ef20bf158684f",measurementId:"G-NZPWF1F5F3"};
 firebase.initializeApp(firebaseConfig);
 const fdb=firebase.firestore();
-fdb.settings({experimentalForceLongPolling:true,useFetchStreams:false,merge:true});
+fdb.settings({experimentalAutoDetectLongPolling:true,useFetchStreams:false});
 const fstorage=firebase.storage();
 </script>
 
