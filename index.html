@@ -49,6 +49,13 @@ header{position:fixed;top:var(--safe-top);left:0;right:0;height:var(--header-h);
 .stu-summary{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 0;font-size:13px;color:var(--muted)}
 .stu-dot{width:8px;height:8px;border-radius:50%}
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:1.25rem}
+.home-group-list{display:flex;flex-direction:column;gap:10px;margin-top:1.25rem}
+.home-group-row{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem;cursor:pointer;transition:all 0.2s}
+.home-group-row:hover{border-color:var(--accent);background:var(--bg2)}
+.home-group-row:active{transform:scale(0.98)}
+.home-group-row .gname{font-weight:600;font-size:15px}
+.home-group-row .gcount{font-size:12px;color:var(--muted)}
+.home-group-empty{text-align:center;color:var(--muted);font-size:13px;padding:2rem 0}
 .menu-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1rem;cursor:pointer;transition:all 0.2s;text-align:left;position:relative;overflow:hidden}
 .menu-card:hover{border-color:var(--accent);background:var(--bg2)}.menu-card:active{transform:scale(0.97)}
 .menu-icon{font-size:26px;margin-bottom:8px;display:block}
@@ -252,7 +259,7 @@ const fstorage=firebase.storage();
 <!-- Splash -->
 <div id="splash">
   <div class="splash-school">GUMI UNIVERSITY</div>
-  <div class="splash-title" id="splash-title">비주얼게임컨텐츠스쿨<br>2026학년도 신입생</div>
+  <div class="splash-title" id="splash-title">인물퀴즈</div>
   <div class="splash-sub">이름 외우기 퀴즈</div>
   <div class="splash-bar"><div class="splash-fill" id="splash-fill"></div></div>
   <div class="splash-dots">
@@ -284,13 +291,29 @@ const fstorage=firebase.storage();
 <div id="s-home" class="screen active">
   <div class="home-hero">
     <div class="school">GUMI UNIVERSITY</div>
-    <h2 id="home-title">비주얼게임컨텐츠스쿨<br>2026학년도 신입생</h2>
+    <h2 id="home-title">인물퀴즈</h2>
     <p>사진을 보고 이름을 맞춰보세요</p>
+    <p>그룹을 선택해주세요</p>
+  </div>
+  <div class="home-group-list" id="home-group-list"></div>
+  <div class="menu-grid" style="grid-template-columns:1fr">
+    <div class="menu-card" id="card-groups" onclick="gotoScreen('s-groups')">
+      <div class="menu-accent"></div><span class="menu-icon">🗂️</span>
+      <div class="menu-label">그룹 관리</div><div class="menu-desc">새 그룹 추가 / 이름변경 / 삭제</div>
+    </div>
+  </div>
+  <div class="home-copy" id="home-copy">Copyright © kjyg2627@gmail.com<br>All Rights Reserved</div>
+</div>
+
+<!-- GROUP MENU (그룹 선택 후) -->
+<div id="s-group-menu" class="screen">
+  <div class="home-hero">
+    <div class="school">GUMI UNIVERSITY</div>
+    <h2 id="group-menu-title">그룹</h2>
     <div class="stu-summary">
       <div class="stu-dot" id="home-dot" style="background:var(--border)"></div>
       <span id="home-stu-cnt">학생 정보 없음 — 관리에서 사진을 추가하세요</span>
     </div>
-    <div class="group-chips" id="group-chips"></div>
   </div>
   <div class="menu-grid">
     <div class="menu-card" onclick="gotoScreen('s-gallery')">
@@ -309,12 +332,7 @@ const fstorage=firebase.storage();
       <div class="menu-accent"></div><span class="menu-icon">⚙️</span>
       <div class="menu-label">학생 관리</div><div class="menu-desc">사진 추가 / 삭제 / 설명 편집</div>
     </div>
-    <div class="menu-card" id="card-groups" onclick="gotoScreen('s-groups')">
-      <div class="menu-accent"></div><span class="menu-icon">🗂️</span>
-      <div class="menu-label">그룹 관리</div><div class="menu-desc">새 그룹 추가 / 이름변경 / 삭제</div>
-    </div>
   </div>
-  <div class="home-copy" id="home-copy">Copyright © kjyg2627@gmail.com<br>All Rights Reserved</div>
 </div>
 
 <!-- MANAGE -->
@@ -376,7 +394,7 @@ const fstorage=firebase.storage();
     <div class="settings-label">미리보기</div>
     <div class="settings-preview">
       <div class="pre-school">GUMI UNIVERSITY</div>
-      <div class="pre-title" id="preview-title">비주얼게임컨텐츠스쿨<br>2026학년도 신입생</div>
+      <div class="pre-title" id="preview-title">인물퀴즈</div>
     </div>
   </div>
   <div class="settings-section">
@@ -511,7 +529,7 @@ let db,students=[],records=[],quizPool=[],quizDiff=5;
 let cur=0,okCnt=0,noCnt=0,wrongList=[],answered=false,mode='mc';
 let gallerySort='name',deferredPrompt=null;
 let recog=null,isListening=false;
-const DEFAULT_TITLE='비주얼게임컨텐츠스쿨\n2026학년도 신입생';
+const DEFAULT_TITLE='인물퀴즈';
 const DEFAULT_COPY='Copyright © kjyg2627@gmail.com · All Rights Reserved';
 let appTitle=DEFAULT_TITLE,appCopy=DEFAULT_COPY;
 let groups=[],currentGroupId=null,isAdmin=true,editingStudentId=null;
@@ -539,7 +557,7 @@ async function resetSettings(){if(!confirm('기본값으로 되돌릴까요?'))r
 function runSplash(){const fill=$('splash-fill');let pct=0;const iv=setInterval(()=>{pct+=2;fill.style.width=pct+'%';[0,1,2].forEach(i=>$('sd'+i).classList.toggle('on',pct>=(i+1)*33));if(pct>=100){clearInterval(iv);setTimeout(()=>{$('splash').classList.add('hide');setTimeout(()=>$('splash').style.display='none',600)},300)}},30)}
 
 /* ── Nav ── */
-const titles={'s-home':'구미대 이름퀴즈','s-manage':'학생 관리','s-gallery':'전체 학생 보기','s-quiz-setup':'퀴즈 설정','s-quiz':'이름 퀴즈','s-result':'퀴즈 결과','s-records':'기록실','s-settings':'앱 설정','s-groups':'그룹 관리'};
+const titles={'s-home':'인물퀴즈','s-manage':'학생 관리','s-gallery':'전체 학생 보기','s-quiz-setup':'퀴즈 설정','s-quiz':'이름 퀴즈','s-result':'퀴즈 결과','s-records':'기록실','s-settings':'앱 설정','s-groups':'그룹 관리','s-group-menu':'그룹 메뉴'};
 function gotoScreen(id){
   stopVoice();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -551,6 +569,7 @@ function gotoScreen(id){
   if(id==='s-records')renderRecords();
   if(id==='s-manage')renderManage();
   if(id==='s-home')updateHome();
+  if(id==='s-group-menu')updateGroupMenu();
   if(id==='s-quiz-setup')prepareQuizSetup();
   if(id==='s-settings'){$('set-title').value=appTitle;$('set-copy').value=appCopy;updatePreview();updateCopyPreview()}
   if(id==='s-groups'){if(!isAdmin){alert('관리자 모드에서만 접근할 수 있어요');gotoScreen('s-home');return}renderGroupsScreen()}
@@ -583,18 +602,36 @@ function renderAdminUI(){
   renderManage();renderGallery();
 }
 function currentGroupStudents(){return students.filter(s=>s.groupId===currentGroupId)}
-function renderGroupChips(){
-  const wrap=$('group-chips');wrap.innerHTML='';
-  if(groups.length<2)return;
+function renderHomeGroups(){
+  const wrap=$('home-group-list');if(!wrap)return;
+  wrap.innerHTML='';
+  if(!groups.length){wrap.innerHTML='<div class="home-group-empty">그룹이 없어요. 아래 "그룹 관리"에서 추가해주세요.</div>';return}
   groups.forEach(g=>{
     const cnt=students.filter(s=>s.groupId===g.id).length;
-    const b=document.createElement('button');
-    b.className='gchip'+(g.id===currentGroupId?' on':'');
-    b.textContent=`${g.name} (${cnt})`;
-    b.onclick=()=>{currentGroupId=g.id;renderGroupChips();updateHomeCounts();if($('s-manage').classList.contains('active'))renderManage();if($('s-gallery').classList.contains('active'))renderGallery()};
-    wrap.appendChild(b);
+    const row=document.createElement('div');
+    row.className='home-group-row';
+    row.innerHTML=`<span class="gname">${g.name}</span><span class="gcount">${cnt}명</span>`;
+    row.onclick=()=>selectGroupAndOpenMenu(g.id);
+    wrap.appendChild(row);
   });
 }
+function selectGroupAndOpenMenu(id){
+  currentGroupId=id;
+  updateGroupMenu();
+  gotoScreen('s-group-menu');
+}
+function updateGroupMenu(){
+  const g=groups.find(x=>x.id===currentGroupId);
+  const titleEl=$('group-menu-title');
+  if(titleEl)titleEl.textContent=g?g.name:'그룹';
+  const c=$('home-stu-cnt'),dot=$('home-dot');
+  const n=currentGroupStudents().length;
+  if(c&&dot){
+    if(n){c.textContent=`학생 ${n}명 등록됨`;dot.style.background='var(--success)'}
+    else{c.textContent='학생 정보 없음 — 관리에서 사진을 추가하세요';dot.style.background='var(--border)'}
+  }
+}
+function renderGroupChips(){renderHomeGroups();updateGroupMenu()} /* 하위호환용 별칭 */
 async function addGroup(){
   const name=$('new-group-name').value.trim();
   if(!name){alert('그룹 이름을 입력하세요');return}
@@ -664,7 +701,7 @@ async function saveStudentDetail(){
 function renderManage(){const g=$('stu-grid'),c=$('manage-count'),cb=$('clear-btn');const list=currentGroupStudents();c.textContent=list.length?`등록된 학생: ${list.length}명`:'등록된 학생 없음';cb.style.display=list.length?'inline-flex':'none';g.innerHTML='';list.forEach(s=>{const d=document.createElement('div');d.className='s-thumb';d.innerHTML=`<img src="${s.src}" alt="${s.name}" onclick="openStudentModal('${s.id}')"><button class="del" onclick="delStudent('${s.id}')">×</button><div class="sn">${s.name}</div>${s.desc?`<div class="sdesc">${s.desc}</div>`:''}`;g.appendChild(d)});const ub=$('upload-target-wrap');if(ub)ub.style.display=(isAdmin&&groups.length>1)?'block':'none';populateGroupSelect()}
 
 /* ── Home ── */
-function updateHome(){renderGroupChips();const c=$('home-stu-cnt'),dot=$('home-dot');const n=currentGroupStudents().length;if(n){c.textContent=`학생 ${n}명 등록됨`;dot.style.background='var(--success)'}else{c.textContent='학생 정보 없음 — 관리에서 사진을 추가하세요';dot.style.background='var(--border)'}}
+function updateHome(){renderHomeGroups();updateGroupMenu()}
 
 /* ── Gallery 1-per-row ── */
 function setSortGallery(s){gallerySort=s;$('sort-name').classList.toggle('on',s==='name');$('sort-rand').classList.toggle('on',s==='rand');renderGallery()}
@@ -755,16 +792,29 @@ async function bootApp(){
   await loadSettings();
   updateHome();renderManage();
 }
+async function diagnoseFirestore(){
+  const pid=firebaseConfig.projectId;
+  const url=`https://firestore.googleapis.com/v1/projects/${pid}/databases/(default)/documents/groups`;
+  try{
+    const res=await fetch(url,{method:'GET'});
+    const text=await res.text();
+    return `REST 응답 코드 ${res.status} — ${text.slice(0,300)}`;
+  }catch(e){
+    return `REST 요청 자체가 실패함 (네트워크 완전 차단 가능성): ${e.message}`;
+  }
+}
 (async()=>{
   const appR=$('app-root'),splash=$('splash'),errBanner=$('boot-error');
   if(splash){splash.classList.add('hide');splash.style.display='none'}
   appR.classList.add('show');
   let done=false;
-  const timeoutId=setTimeout(()=>{
+  const timeoutId=setTimeout(async()=>{
     if(done)return;
-    errBanner.textContent='⚠ 데이터 연결이 너무 오래 걸려요. 인터넷 연결을 확인하거나 와이파이/모바일데이터를 전환해보세요.';
+    errBanner.textContent='⚠ 데이터 연결이 너무 오래 걸려요. 진단 중...';
     errBanner.classList.add('show');
-  },12000);
+    const diag=await diagnoseFirestore();
+    errBanner.textContent='⚠ 진단 결과: '+diag;
+  },8000);
   try{
     await bootApp();
     done=true;
