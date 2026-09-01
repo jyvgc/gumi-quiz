@@ -754,17 +754,16 @@ async function bootApp(){
   await ensureDefaultGroup();
   await loadSettings();
   updateHome();renderManage();
-  runSplash();
 }
 (async()=>{
   const appR=$('app-root'),splash=$('splash'),errBanner=$('boot-error');
+  if(splash){splash.classList.add('hide');splash.style.display='none'}
   appR.classList.add('show');
   let done=false;
   const timeoutId=setTimeout(()=>{
     if(done)return;
     errBanner.textContent='⚠ 데이터 연결이 너무 오래 걸려요. 인터넷 연결을 확인하거나 와이파이/모바일데이터를 전환해보세요.';
     errBanner.classList.add('show');
-    if(splash)splash.classList.add('hide');
   },12000);
   try{
     await bootApp();
@@ -775,7 +774,6 @@ async function bootApp(){
     clearTimeout(timeoutId);
     errBanner.textContent='⚠ 데이터를 불러오지 못했어요: '+e.message;
     errBanner.classList.add('show');
-    if(splash)splash.classList.add('hide');
   }
 })();
 </script>
